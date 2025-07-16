@@ -1,0 +1,95 @@
+﻿@model ResourceBookingSystem.Models.Resource
+
+@{
+    ViewData["Title"] = "Create Resource";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus me-2"></i>Add New Resource
+                </h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label">
+                            <i class="fas fa-tag me-1"></i>Resource Name
+                        </label>
+                        <input asp-for="Name" class="form-control" placeholder="e.g., Meeting Room Alpha, Company Car 1" required />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">
+                            <i class="fas fa-info-circle me-1"></i>Description
+                        </label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="e.g., Large room with projector and whiteboard"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Location" class="form-label">
+                            <i class="fas fa-map-marker-alt me-1"></i>Location
+                        </label>
+                        <input asp-for="Location" class="form-control" placeholder="e.g., 3rd Floor, West Wing" />
+                        <span asp-validation-for="Location" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Capacity" class="form-label">
+                            <i class="fas fa-users me-1"></i>Capacity
+                        </label>
+                        <input asp-for="Capacity" class="form-control" type="number" min="1" placeholder="e.g., 10" required />
+                        <span asp-validation-for="Capacity" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input asp-for="IsAvailable" class="form-check-input" checked />
+                            <label asp-for="IsAvailable" class="form-check-label">
+                                <i class="fas fa-check-circle me-1"></i>Available for booking
+                            </label>
+                        </div>
+                        <span asp-validation-for="IsAvailable" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Create Resource
+                        </button>
+                        <a class="btn btn-secondary" href="@Url.Action("Index")">
+                            <i class="fas fa-arrow-left me-2"></i>Back to List
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Real-time validation feedback
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const inputs = form.querySelectorAll('input, textarea');
+
+            inputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    if (this.checkValidity()) {
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    } else {
+                        this.classList.remove('is-valid');
+                        this.classList.add('is-invalid');
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,240 @@
+﻿@model ResourceBookingSystem.Models.Booking
+
+@{
+    ViewData["Title"] = "Create Booking";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-calendar-plus me-2"></i>Create New Booking
+                </h4>
+            </div>
+            <div class="card-body">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show">
+                        <i class="fas fa-check-circle me-2"></i>
+                        @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <form asp-action="Create" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="ResourceId" class="form-label">
+                            <i class="fas fa-box me-1"></i>Select Resource
+                        </label>
+                        <select asp-for="ResourceId" class="form-select" asp-items="ViewBag.ResourceId" required>
+                            <option value="">-- Select a Resource --</option>
+                        </select>
+                        <span asp-validation-for="ResourceId" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="StartTime" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>Start Time
+                                </label>
+                                <input asp-for="StartTime" class="form-control" type="datetime-local" required />
+                                <span asp-validation-for="StartTime" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="EndTime" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>End Time
+                                </label>
+                                <input asp-for="EndTime" class="form-control" type="datetime-local" required />
+                                <span asp-validation-for="EndTime" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="BookedBy" class="form-label">
+                            <i class="fas fa-user me-1"></i>Booked By
+                        </label>
+                        <input asp-for="BookedBy" class="form-control" placeholder="e.g., John Doe" maxlength="100" required />
+                        <span asp-validation-for="BookedBy" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Purpose" class="form-label">
+                            <i class="fas fa-info-circle me-1"></i>Purpose
+                        </label>
+                        <input asp-for="Purpose" class="form-control" placeholder="e.g., Team Meeting, Client Presentation" maxlength="200" required />
+                        <span asp-validation-for="Purpose" class="text-danger"></span>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> The system will automatically check for conflicts with existing bookings before creating your reservation.
+                    </div>
+
+                    <div id="availability-status" class="alert" style="display: none;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span id="availability-message"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                            <i class="fas fa-save me-2"></i>Create Booking
+                        </button>
+                        <a class="btn btn-secondary" href="@Url.Action("Index")">
+                            <i class="fas fa-arrow-left me-2"></i>Back to List
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startTimeInput = document.getElementById('StartTime');
+            const endTimeInput = document.getElementById('EndTime');
+            const resourceSelect = document.getElementById('ResourceId');
+            const availabilityStatus = document.getElementById('availability-status');
+            const availabilityMessage = document.getElementById('availability-message');
+            const submitBtn = document.getElementById('submit-btn');
+
+            // Set minimum date to current date/time
+            const now = new Date();
+            const minDateTime = now.toISOString().slice(0, 16);
+            startTimeInput.setAttribute('min', minDateTime);
+            endTimeInput.setAttribute('min', minDateTime);
+
+            // Update end time minimum when start time changes
+            startTimeInput.addEventListener('change', function() {
+                const startTime = new Date(this.value);
+                if (startTime) {
+                    // Set end time minimum to 30 minutes after start time
+                    const minEndTime = new Date(startTime.getTime() + 30 * 60000);
+                    endTimeInput.setAttribute('min', minEndTime.toISOString().slice(0, 16));
+
+                    // If end time is before new minimum, update it
+                    const currentEndTime = new Date(endTimeInput.value);
+                    if (currentEndTime <= startTime) {
+                        endTimeInput.value = minEndTime.toISOString().slice(0, 16);
+                    }
+                }
+                checkAvailability();
+            });
+
+            // Validate end time is after start time
+            endTimeInput.addEventListener('change', function() {
+                const startTime = new Date(startTimeInput.value);
+                const endTime = new Date(this.value);
+
+                if (startTime && endTime) {
+                    if (endTime <= startTime) {
+                        this.setCustomValidity('End time must be after start time');
+                    } else if (endTime.getTime() - startTime.getTime() < 30 * 60000) {
+                        this.setCustomValidity('Booking must be at least 30 minutes long');
+                    } else {
+                        this.setCustomValidity('');
+                    }
+                }
+                checkAvailability();
+            });
+
+            // Check availability when resource changes
+            resourceSelect.addEventListener('change', checkAvailability);
+
+            // Real-time validation feedback
+            const form = document.querySelector('form');
+            const inputs = form.querySelectorAll('input, select');
+
+            inputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    if (this.checkValidity()) {
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    } else {
+                        this.classList.remove('is-valid');
+                        this.classList.add('is-invalid');
+                    }
+                });
+            });
+
+            // Check availability function
+            function checkAvailability() {
+                const resourceId = resourceSelect.value;
+                const startTime = startTimeInput.value;
+                const endTime = endTimeInput.value;
+
+                if (resourceId && startTime && endTime) {
+                    fetch(`@Url.Action("CheckAvailability")?resourceId=${resourceId}&startTime=${startTime}&endTime=${endTime}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.available) {
+                                availabilityStatus.className = 'alert alert-success';
+                                availabilityMessage.textContent = 'Resource is available for the selected time period.';
+                                submitBtn.disabled = false;
+                            } else {
+                                availabilityStatus.className = 'alert alert-warning';
+                                availabilityMessage.textContent = 'Resource is not available for the selected time period. Please choose different times.';
+                                submitBtn.disabled = true;
+                            }
+                            availabilityStatus.style.display = 'block';
+                        })
+                        .catch(error => {
+                            console.error('Error checking availability:', error);
+                            availabilityStatus.style.display = 'none';
+                            submitBtn.disabled = false;
+                        });
+                } else {
+                    availabilityStatus.style.display = 'none';
+                    submitBtn.disabled = false;
+                }
+            }
+
+            // Form submission validation
+            form.addEventListener('submit', function(e) {
+                // Final validation before submission
+                const startTime = new Date(startTimeInput.value);
+                const endTime = new Date(endTimeInput.value);
+                const now = new Date();
+
+                if (startTime < now) {
+                    e.preventDefault();
+                    alert('Start time cannot be in the past.');
+                    return;
+                }
+
+                if (endTime <= startTime) {
+                    e.preventDefault();
+                    alert('End time must be after start time.');
+                    return;
+                }
+
+                if (endTime.getTime() - startTime.getTime() < 30 * 60000) {
+                    e.preventDefault();
+                    alert('Booking must be at least 30 minutes long.');
+                    return;
+                }
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+            });
+        });
+    </script>
+}

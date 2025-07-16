@@ -1,0 +1,96 @@
+﻿@model IEnumerable<ResourceBookingSystem.Models.Booking>
+@{
+    ViewData["Title"] = "Upcoming Bookings";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1><i class="fas fa-clock"></i> Upcoming Bookings</h1>
+        <p class="text-muted">View all upcoming resource bookings</p>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a class="btn btn-primary" asp-action="Create">
+            <i class="fas fa-plus"></i> Create New Booking
+        </a>
+        <a class="btn btn-info" asp-action="Index">
+            <i class="fas fa-list"></i> View All Bookings
+        </a>
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-list"></i> Upcoming Booking List</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Resource</th>
+                            <th>Booked By</th>
+                            <th>Purpose</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var booking in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@booking.Resource.Name</strong><br>
+                                    <small class="text-muted">@booking.Resource.Location</small>
+                                </td>
+                                <td>@booking.BookedBy</td>
+                                <td>@booking.Purpose</td>
+                                <td>@booking.StartTime.ToString("MMM dd, yyyy")<br><small>@booking.StartTime.ToString("hh:mm tt")</small></td>
+                                <td>@booking.EndTime.ToString("MMM dd, yyyy")<br><small>@booking.EndTime.ToString("hh:mm tt")</small></td>
+                                <td>
+                                    @if (booking.StartTime <= DateTime.Now && booking.EndTime >= DateTime.Now)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary">Upcoming</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@booking.Id">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-warning" asp-action="Edit" asp-route-id="@booking.Id">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-danger" asp-action="Delete" asp-route-id="@booking.Id">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-center">
+        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+        <p class="text-muted">No upcoming bookings found.</p>
+        <a class="btn btn-primary" asp-action="Create">
+            <i class="fas fa-plus"></i> Create New Booking
+        </a>
+    </div>
+}
